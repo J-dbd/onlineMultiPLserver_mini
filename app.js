@@ -37,7 +37,7 @@ io.on("connection", (socket) => {
     x: 500 * Math.random(),
     y: 500 * Math.random(),
     color: `hsl(${360 * Math.random()}, 100%, 50%)`,
-    sequenceNumber: 0,
+    sequenceNumber: 0, //for tracing: handling Server Reconciliation
   };
 
   /** broadcast to backEndPlayers just connected  */
