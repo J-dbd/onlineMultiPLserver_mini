@@ -49,8 +49,51 @@ socket.on("updatePlayers", (backEndPlayers) => {
       });
     } else {
       // if a player already exist, update it.
-      frontEndplayers[id].x = backEndPlayer.x;
-      frontEndplayers[id].y = backEndPlayer.y;
+
+      ///////////////////////////
+      // Server Reconciliation //
+      ///////////////////////////
+
+      if (id == socket.id) {
+        // 내가 조종하는 화면에서의 update handling
+
+        frontEndplayers[id].x = backEndPlayer.x;
+        frontEndplayers[id].y = backEndPlayer.y;
+
+        ///////////////////////////////////////
+        /** Slicing playerInputs [current :] */
+        ///////////////////////////////////////
+
+        /** [1] Grab & Find idx
+         *
+         * grab pl inputs, find idx of the event we are currently on.
+         * playerInputs contains object:{ sequenceNumber, dx: 0, dy: -SPEED }
+         */
+        const lastBackEndInputIndex = playerInputs.findIndex((input) => {
+          // each backEndPlayer has a seq num.
+          return backEndPlayer.sequenceNumber === input.sequenceNumber;
+        });
+
+        /**[2] Slice the array */
+        if (lastBackEndInputIndex > -1) {
+          playerInputs.splice(0, lastBackEndInputIndex + 1);
+        }
+
+        playerInputs.forEach((input) => {
+          frontEndplayers[id].x += input.dx;
+          frontEndplayers[id].y += input.dy;
+        });
+      } else {
+        /**
+         * for all player, to take BE player position,
+         * and assign it to our FE player's position
+         *
+         * 내 화면에 보여지는 다른 플레이어들의 위치를 위한 update handling
+         *
+         */
+        frontEndplayers[id].x = backEndPlayer.x;
+        frontEndplayers[id].y = backEndPlayer.y;
+      }
     }
   }
 
@@ -121,23 +164,36 @@ const keys = {
 };
 
 const SPEED = 10;
+/** Trace player inputs */
+const playerInputs = [];
+let sequenceNumber = 0;
 setInterval(() => {
   if (keys.ArrowUp.pressed) {
+    sequenceNumber++;
+    playerInputs.push({ sequenceNumber, dx: 0, dy: -SPEED }); //destructing
     frontEndplayers[socket.id].y -= SPEED;
-    socket.emit("keydown", "ArrowUp");
+    socket.emit("keydown", { keycode: "ArrowUp", sequenceNumber });
   }
   if (keys.ArrowDown.pressed) {
+    sequenceNumber++;
+    playerInputs.push({ sequenceNumber, dx: 0, dy: +SPEED });
     frontEndplayers[socket.id].y += SPEED;
-    socket.emit("keydown", "ArrowDown");
+    socket.emit("keydown", { keycode: "ArrowDown", sequenceNumber });
   }
   if (keys.ArrowRight.pressed) {
+    sequenceNumber++;
+    playerInputs.push({ sequenceNumber, dx: +SPEED, dy: 0 });
     frontEndplayers[socket.id].x += SPEED;
-    socket.emit("keydown", "ArrowRight");
+    socket.emit("keydown", { keycode: "ArrowRight", sequenceNumber });
   }
   if (keys.ArrowLeft.pressed) {
+    sequenceNumber++;
+    playerInputs.push({ sequenceNumber, dx: -SPEED, dy: 0 });
     frontEndplayers[socket.id].x -= SPEED;
-    socket.emit("keydown", "ArrowLeft");
+    socket.emit("keydown", { keycode: "ArrowLeft", sequenceNumber });
   }
+
+  //console.log("playerInputs", playerInputs);
 }, 15);
 
 window.addEventListener("keydown", (event) => {

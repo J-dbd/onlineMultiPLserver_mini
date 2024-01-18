@@ -37,6 +37,7 @@ io.on("connection", (socket) => {
     x: 500 * Math.random(),
     y: 500 * Math.random(),
     color: `hsl(${360 * Math.random()}, 100%, 50%)`,
+    sequenceNumber: 0,
   };
 
   /** broadcast to backEndPlayers just connected  */
@@ -53,10 +54,20 @@ io.on("connection", (socket) => {
 
   const SPEED = 10;
   /** [3] Reat-time Movement Rendering */
-  socket.on("keydown", (keyCode) => {
+  socket.on("keydown", ({ keycode, sequenceNumber }) => {
     //console.log("[BE] key pressed: ", keyCode);
     //const movedPlayer = backEndPlayers[socket.id];
-    switch (keyCode) {
+
+    /**
+     * [ Trace ]
+     * Trace seq or events we are currently on
+     * with each individual player by sequenceNumber from front-End.
+     *
+     * This will be used on the FE to apply server reconciliation placing player
+     * in the correct spot in case we get a massive lag spike or something
+     */
+    backEndPlayers[socket.id].sequenceNumber = sequenceNumber;
+    switch (keycode) {
       case "ArrowUp":
         backEndPlayers[socket.id].y -= SPEED;
         break;
@@ -78,7 +89,7 @@ io.on("connection", (socket) => {
 /* for every 66.666 sec... */
 setInterval(() => {
   io.emit("updatePlayers", backEndPlayers);
-}, 1500); // 1000/15 = 66.6666...
+}, 15); // 1000/15 = 66.6666...
 
 /**for soket.io, change app.listener to server.listener */
 server.listen(port, () => {
