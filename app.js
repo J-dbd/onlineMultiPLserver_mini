@@ -52,7 +52,7 @@ io.on("connection", (socket) => {
     io.emit("updatePlayers", backEndPlayers); // Broadcast to everyone's FE
   });
 
-  const SPEED = 10;
+  const SPEED = 15;
   /** [3] Reat-time Movement Rendering */
   socket.on("keydown", ({ keycode, sequenceNumber }) => {
     //console.log("[BE] key pressed: ", keyCode);

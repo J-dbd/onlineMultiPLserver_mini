@@ -91,8 +91,20 @@ socket.on("updatePlayers", (backEndPlayers) => {
          * 내 화면에 보여지는 다른 플레이어들의 위치를 위한 update handling
          *
          */
-        frontEndplayers[id].x = backEndPlayer.x;
-        frontEndplayers[id].y = backEndPlayer.y;
+        // frontEndplayers[id].x = backEndPlayer.x;
+        // frontEndplayers[id].y = backEndPlayer.y;
+
+        /////////////////////////////////////
+        /** Interpolation: using lib(gsap) */
+        /////////////////////////////////////
+        // for moving smoothly
+        // 내 화면에서 다른 플레이어들의 움직임이 부드럽게 그려지기 위해 애니메이션 lib을 사용한다.
+        gsap.to(frontEndplayers[id], {
+          x: backEndPlayer.x,
+          y: backEndPlayer.y,
+          duration: 0.015,
+          ease: "linear",
+        });
       }
     }
   }
@@ -163,7 +175,7 @@ const keys = {
   },
 };
 
-const SPEED = 10;
+const SPEED = 15;
 /** Trace player inputs */
 const playerInputs = [];
 let sequenceNumber = 0;
