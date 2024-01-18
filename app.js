@@ -28,28 +28,57 @@ app.get("/", (req, res) => {
 });
 
 /** Holding all Plyaers in BE */
-const players = {};
+const backEndPlayers = {};
 /** whenever a new player connects to game, we need to broadcast a state of every player */
 /** connection btw BE and FE  */
 io.on("connection", (socket) => {
   console.log(`a user connected: ${socket.conn.transport.name} / ${socket.id}`);
-  players[socket.id] = {
+  backEndPlayers[socket.id] = {
     x: 500 * Math.random(),
     y: 500 * Math.random(),
     color: `hsl(${360 * Math.random()}, 100%, 50%)`,
   };
-  /** broadcast to players just connected  */
-  //socket.emit('updatePlyaers', players)
 
+  /** broadcast to backEndPlayers just connected  */
+  //socket.emit('updatePlyaers', backEndPlayers)
   /** broadcast to everyone: new pl has joined,so render the result. */
-  io.emit("updatePlayers", players);
+  io.emit("updatePlayers", backEndPlayers);
 
+  /** [2] Disconnection */
   socket.on("disconnect", (reason) => {
     console.log(`a user disconnected: reason:${reason}`);
-    delete players[socket.id]; // del in BE
-    io.emit("updatePlayers", players); // Broadcast to everyone's FE
+    delete backEndPlayers[socket.id]; // del in BE
+    io.emit("updatePlayers", backEndPlayers); // Broadcast to everyone's FE
+  });
+
+  const SPEED = 10;
+  /** [3] Reat-time Movement Rendering */
+  socket.on("keydown", (keyCode) => {
+    //console.log("[BE] key pressed: ", keyCode);
+    //const movedPlayer = backEndPlayers[socket.id];
+    switch (keyCode) {
+      case "ArrowUp":
+        backEndPlayers[socket.id].y -= SPEED;
+        break;
+      case "ArrowDown":
+        backEndPlayers[socket.id].y += SPEED;
+        break;
+      case "ArrowRight":
+        backEndPlayers[socket.id].x += SPEED;
+        break;
+      case "ArrowLeft":
+        backEndPlayers[socket.id].x -= SPEED;
+        break;
+    }
+
+    io.emit("updateBackEndPlayers", backEndPlayers);
   });
 });
+
+/* for every 66.666 sec... */
+setInterval(() => {
+  io.emit("updatePlayers", backEndPlayers);
+}, 1500); // 1000/15 = 66.6666...
 
 /**for soket.io, change app.listener to server.listener */
 server.listen(port, () => {
